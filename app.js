@@ -147,7 +147,7 @@ function postAwlogs(event, context) {
 
             let objArray = []
             for (let i = 0; i < logArray.length; i++) {
-                const regexIssueNumber = /(n\s*|#\s*)([0-9]+)/
+                const regexIssueNumber = /(n\s*|#\s*|number\s*)([0-9]+)/gi
                 const issueNumber = logArray[i].message.match(regexIssueNumber) !== null ? logArray[i].message.match(regexIssueNumber)[0].replace(/number|n|#|/gi, "").trim() : false
                 if (!issueNumber) continue
                 const date = new Date(logArray[i].timestamp).toString()
