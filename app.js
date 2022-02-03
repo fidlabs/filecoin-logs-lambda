@@ -150,6 +150,7 @@ function postAwlogs(event, context) {
                 const regexIssueNumber = /(n\s*|#\s*|number\s*)([0-9]+)/gi
                 const issueNumber = logArray[i].message.match(regexIssueNumber) !== null ? logArray[i].message.match(regexIssueNumber)[0].replace(/number|n|#|/gi, "").trim() : false
                 if (!issueNumber) continue
+                if(returnActionKeyword(logArray[i].message) === "testLog") continue
                 const date = new Date(logArray[i].timestamp).toString()
                 let obj = {
                     "PutRequest": {
@@ -210,7 +211,7 @@ function returnTypeOfLog(message) {
     return "INFO"
 }
 function returnActionKeyword(message) {
-    const regex = /(commented|skipped|margin|multisig created|issue created|datacap modified|Posting label|CREATE REQUEST COMMENT|CREATE STATS COMMENT)/ig
+    const regex = /(testLog|commented|skipped|margin|multisig created|issue created|datacap modified|Posting label|CREATE REQUEST COMMENT|CREATE STATS COMMENT)/ig
     const exec = regex.exec(message)
     if (exec != null) {
         return exec[0]
@@ -220,10 +221,12 @@ function returnActionKeyword(message) {
 const saveManyRecursively = async (batchItem) => {
 
     try {
+        console.log("batchItem", batchItem)
         const dynamoProm = dynamodb.batchWriteItem(batchItem).promise()
         const dynamoRes = await Promise.resolve(dynamoProm)
 
         if (Object.keys(dynamoRes.UnprocessedItems).length > 0) {
+
             setTimeout(() => console.log("waiting 2 secs before retry...", 2000))
             saveManyRecursively(res.UnprocessedItems) //TODO TEST
         }
