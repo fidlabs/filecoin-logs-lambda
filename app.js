@@ -182,13 +182,25 @@ function postAwlogs(event, context) {
                 objArray.push(obj)
             }
 
-            const batchItem = {
-                "RequestItems": {
-                    "dle-crud": objArray
+            let batchItemArr = []
+            while(objArray.length){
+                const splicedArr = objArray.splice(0,24)
+                console.log("splicedArr",splicedArr, splicedArr.length)
+                const batchItem = {
+                    "RequestItems": {
+                        "dle-crud": splicedArr
+                    }
                 }
+                batchItemArr.push(batchItem)
+            }
+            console.log("batchItemArr.length", batchItemArr.length,)
+            if(batchItemArr.length){
+                return saveManyRecursively(batchItemArr)
+            }
+            return {
+                status: 500
             }
 
-            return saveManyRecursively(batchItem)
 
         }
     })
@@ -218,24 +230,25 @@ function returnActionKeyword(message) {
     }
     return ""
 }
-const saveManyRecursively = async (batchItem) => {
+const saveManyRecursively = async (batchItemArr) => {
 
     try {
-        console.log("batchItem", batchItem)
-        const dynamoProm = dynamodb.batchWriteItem(batchItem).promise()
-        const dynamoRes = await Promise.resolve(dynamoProm)
 
-        if (Object.keys(dynamoRes.UnprocessedItems).length > 0) {
-
-            setTimeout(() => console.log("waiting 2 secs before retry...", 2000))
-            saveManyRecursively(res.UnprocessedItems) //TODO TEST
-        }
-
-        const response = {
-            statusCode: 200,
-        }
-
-        return response
+        await Promise.all(
+            batchItemArr.map(async (batchItem)=>{
+                
+                const dynamoProm = dynamodb.batchWriteItem(batchItem).promise()
+                const dynamoRes = await Promise.resolve(dynamoProm)
+                console.log("dynamoRes",dynamoRes)
+        
+                if (Object.keys(dynamoRes.UnprocessedItems).length > 0) {
+        
+                    setTimeout(() => console.log("waiting 2 secs before retry...", 2000))
+                    saveManyRecursively(res.UnprocessedItems) //TODO TEST
+                }
+                
+            })
+        )
     } catch (error) {
         console.log("error in error in saveManyRecursively", error)
     }
