@@ -74,14 +74,16 @@ const postCustomLogs = async (event, context) => {
         objArray.push(obj)
     }
 
+    let batchItemArr = []
     const batchItem = {
         "RequestItems": {
             "dle-crud": objArray
         }
     }
+     batchItemArr.push(batchItem)
 
     try {
-        return await saveManyRecursively(batchItem)
+        return await saveManyRecursively(batchItemArr)
     } catch (error) {
         console.log(error)
     }
